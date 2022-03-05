@@ -22,7 +22,7 @@ FPGA-liteCAN
 
 # 设计文件说明
 
-设计相关的4个文件在 [RTL](https://github.com/WangXuan95/liteCAN/blob/main/RTL) 文件夹中，各文件功能如下表。你只需将以上4个文件包含进工程，就可以调用**can_top.sv**进行更高层次的CAN通信业务的二次开发。
+设计相关的4个文件在 [RTL](./RTL) 文件夹中，各文件功能如下表。你只需将以上4个文件包含进工程，就可以调用**can_top.sv**进行更高层次的CAN通信业务的二次开发。
 
 | 文件名 | 功能 | 备注 |
 | :-- |   :-- |   :-- |  
@@ -35,7 +35,7 @@ FPGA-liteCAN
 
 # 仿真文件说明
 
-仿真相关的3个文件在 [TB](https://github.com/WangXuan95/liteCAN/blob/main/TB) 文件夹中，各文件功能如下表。如果你想了解本控制器的工作原理，或学习CAN总线时序，可以将以下3个仿真文件和以上4个设计文件包含进工程，并以**tb_can_top.sv**作为顶层进行仿真。
+仿真相关的3个文件在 [TB](./TB) 文件夹中，各文件功能如下表。如果你想了解本控制器的工作原理，或学习CAN总线时序，可以将以下3个仿真文件和以上4个设计文件包含进工程，并以**tb_can_top.sv**作为顶层进行仿真。
 
 | 文件名 | 功能 | 备注 |
 | :-- |   :-- |   :-- |  
@@ -45,7 +45,7 @@ FPGA-liteCAN
 
 仿真顶层**tb_can_top.sv**描述了4个CAN总线设备互相进行通信的场景，每个设备都是一个**can_top.sv**的例化，**图1**是每个设备的详细属性，各个设备互相接收的关系可以画成左侧的箭头图，箭头代表了各个设备之间的接收关系。另外，每个CAN设备的驱动时钟并不严格是50MHz，而是有不同的±1%的偏移，这是为了模拟更糟糕的实际情况下，CAN控制器的“下降沿对齐”机制能否奏效。
 
-| ![img1](https://github.com/WangXuan95/liteCAN/blob/main/img/sim_topology.png) |
+| ![img1](./img/sim_topology.png) |
 | :--: |
 | **图1**：仿真中的4个CAN设备的详细参数 |
 
@@ -76,7 +76,7 @@ FPGA-liteCAN
 
 **can_top.sv**的**can_rx**和**can_tx**接口需要引出到FPGA引脚上，并接CAN-PHY，如**图2**。
 
-| ![img2](https://github.com/WangXuan95/liteCAN/blob/main/img/hardware.png) |
+| ![img2](./img/hardware.png) |
 | :--: |
 | **图2**：接入CAN总线的方式 |
 
@@ -172,14 +172,14 @@ FPGA-liteCAN
 
 # 示例程序
 
-[quartus_example](https://github.com/WangXuan95/liteCAN/blob/main/quartus_example) 文件夹里是一个调用 **can_top.sv** 进行简单的**CAN通信**的案例，该工程使用 quartus II 13.1 建立，并在 EP4CE6E22 FPGA 上运行（当然你也可以改改让它在自己的FPGA上运行）。
+[quartus_example](./quartus_example) 文件夹里是一个调用 **can_top.sv** 进行简单的**CAN通信**的案例，该工程使用 quartus II 13.1 建立，并在 EP4CE6E22 FPGA 上运行（当然你也可以改改让它在自己的FPGA上运行）。
 
 该案例每 1s 向 **can_top** 的发送缓存中送入一个递增的数据；同时，将CAN接收到的数据通过 UART 发送给电脑（不方便接UART可以不接，并不重要）。
 **can_top** 的本地ID配置为 **0x456** ，ID过滤器被配置为只接收**短ID**=**0x123**或**长ID**=**0x12345678**的数据帧。
 
 > 该案例中，CAN的波特率为1M，UART的波特率为115200
 
-| ![img3](https://github.com/WangXuan95/liteCAN/blob/main/img/example.jpg) |
+| ![img3](./img/example.jpg) |
 | :--: |
 | **图3**：硬件连接 |
 
@@ -190,6 +190,6 @@ FPGA-liteCAN
 * 发送**短ID**=**0x456**的远程帧，FPGA 会立即响应一个数据帧，如**图4**中红框的部分。
 
 
-| ![img4](https://github.com/WangXuan95/liteCAN/blob/main/img/debug.png) |
+| ![img4](./img/debug.png) |
 | :--: |
 | **图4**：USB-CAN调试器的配套软件上观察到的现象 |
