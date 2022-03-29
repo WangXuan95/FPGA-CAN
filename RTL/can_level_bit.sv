@@ -1,4 +1,11 @@
-`timescale 1ps/1ps
+
+//--------------------------------------------------------------------------------------------------------
+// Module  : can_level_bit
+// Type    : synthesizable, IP's sub module
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Function: CAN bus bit level controller,
+//           instantiated by can_level_packet
+//--------------------------------------------------------------------------------------------------------
 
 module can_level_bit #(
     parameter logic [15:0] default_c_PTS  = 16'd34,
@@ -18,9 +25,12 @@ module can_level_bit #(
     input  wire        tbit   // next bit to transmit, must set at the cycle after req=1
 );
 
+initial can_tx = 1'b1;
+initial req = 1'b0;
+initial rbit = 1'b1;
 
-reg        rx_buf;
-reg        rx_fall;
+reg        rx_buf = 1'b1;
+reg        rx_fall = 1'b0;
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
         rx_buf  <= 1'b1;
@@ -34,11 +44,11 @@ localparam [16:0] default_c_PTS_e  = {1'b0, default_c_PTS};
 localparam [16:0] default_c_PBS1_e = {1'b0, default_c_PBS1};
 localparam [16:0] default_c_PBS2_e = {1'b0, default_c_PBS2};
 
-reg  [16:0] adjust_c_PBS1;
-reg  [ 2:0] cnt_high;
-reg  [16:0] cnt;
-enum logic [1:0] {STAT_PTS, STAT_PBS1, STAT_PBS2} stat;
-reg        inframe;
+reg  [16:0] adjust_c_PBS1 = '0;
+reg  [ 2:0] cnt_high = '0;
+reg  [16:0] cnt = 17'd1;
+enum logic [1:0] {STAT_PTS, STAT_PBS1, STAT_PBS2} stat = STAT_PTS;
+reg        inframe = 1'b0;
 
 
 always @ (posedge clk or negedge rstn)

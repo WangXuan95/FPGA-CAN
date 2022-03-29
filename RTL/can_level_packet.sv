@@ -1,4 +1,11 @@
-`timescale 1ps/1ps
+
+//--------------------------------------------------------------------------------------------------------
+// Module  : can_level_packet
+// Type    : synthesizable, IP's sub module
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Function: CAN bus packet level controller,
+//           instantiated by can_top
+//--------------------------------------------------------------------------------------------------------
 
 module can_level_packet #(
     parameter logic        TX_RTR         = 1'b0,
@@ -30,6 +37,9 @@ module can_level_packet #(
     input  wire        rx_ack
 );
 
+initial {tx_done, tx_acked} = 1'b0;
+initial {rx_valid,rx_id,rx_ide,rx_rtr,rx_len,rx_data} = '0;
+
 
 function automatic logic [14:0] crc15(input logic [14:0] crc_val, input logic in_bit);
     return {crc_val[13:0], 1'b0} ^ (crc_val[14] ^ in_bit ? 15'h4599 : 15'h0);
@@ -37,7 +47,7 @@ endfunction
 
 wire bit_req;
 wire bit_rx;
-reg  bit_tx;
+reg  bit_tx = 1'b1;
 
 can_level_bit #(
     .default_c_PTS   ( default_c_PTS    ),
@@ -54,8 +64,8 @@ can_level_bit #(
 );
 
 
-reg [ 7:0] rx_history;
-reg [ 3:0] tx_history;
+reg [ 7:0] rx_history = '0;
+reg [ 3:0] tx_history = '1;
 wire       rx_end = rx_history=='1;
 wire       rx_err = rx_history[5:0]=='0;
 wire       rx_ben = rx_history[4:0]!='0 && rx_history[4:0]!='1;
@@ -74,21 +84,18 @@ always @ (posedge clk or negedge rstn)
 
 
 
-reg        arb;
+reg        arb = '0;
 wire       arb_next = arb && bit_rx==bit_tx;
 
-reg [14:0] rx_crc;
+reg [14:0] rx_crc = '0;
 wire[14:0] rx_crc_next = {rx_crc[13:0], 1'b0} ^ (rx_crc[14] ^ bit_rx ? 15'h4599 : 15'h0);
 
-reg [49:0] tx_shift;
-reg [14:0] tx_crc;
+reg [49:0] tx_shift = '1;
+reg [14:0] tx_crc = '0;
 wire[14:0] tx_crc_next = {tx_crc[13:0], 1'b0} ^ (tx_crc[14] ^ tx_shift[49] ? 15'h4599 : 15'h0);
 
 wire[ 3:0] rx_len_next = {rx_len[2:0], bit_rx};
 wire[ 7:0] rx_cnt = rx_len[3] ? 8'd63 : {1'd0, rx_len, 3'd0} - 8'd1;
-
-reg [ 7:0] cnt;
-reg [ 3:0] stat;
 
 localparam [3:0] INIT         = 4'd0,
                  IDLE         = 4'd1,
@@ -107,9 +114,12 @@ localparam [3:0] INIT         = 4'd0,
                  RX_ACK       = 4'd14,
                  RX_EOF       = 4'd15;
 
-reg rx_valid_pre;
-reg rx_valid_latch;
-reg rx_ack_latch;
+reg [ 7:0] cnt = '0;
+reg [ 3:0] stat = INIT;
+
+reg rx_valid_pre = '0;
+reg rx_valid_latch = '0;
+reg rx_ack_latch = '0;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin

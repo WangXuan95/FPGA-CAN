@@ -1,4 +1,12 @@
-`timescale 1ps/1ps
+
+//--------------------------------------------------------------------------------------------------------
+// Module  : can_top
+// Type    : synthesizable, IP's top
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Function: CAN bus controller,
+//           CAN-TX: buffer input data and send them to CAN bus,
+//           CAN-RX: get CAN bus data and output to user
+//--------------------------------------------------------------------------------------------------------
 
 module can_top #(
     // local ID parameter
@@ -35,12 +43,14 @@ module can_top #(
     output reg         rx_ide     // whether the ID is LONG or SHORT
 );
 
-wire        buff_valid;
-reg         buff_ready;
+initial {rx_valid, rx_last, rx_data, rx_id, rx_ide} = '0;
+
+reg         buff_valid = '0;
+reg         buff_ready = '0;
 wire [31:0] buff_data;
 
-reg         pkt_txing;
-reg  [31:0] pkt_tx_data;
+reg         pkt_txing = '0;
+reg  [31:0] pkt_tx_data = '0;
 wire        pkt_tx_done;
 wire        pkt_tx_acked;
 wire        pkt_rx_valid;
@@ -49,33 +59,68 @@ wire        pkt_rx_ide;
 wire        pkt_rx_rtr;
 wire [ 3:0] pkt_rx_len;
 wire [63:0] pkt_rx_data;
-reg         pkt_rx_ack;
+reg         pkt_rx_ack = '0;
 
-reg         t_rtr_req;
-reg         r_rtr_req;
-reg  [ 3:0] r_cnt;
-reg  [ 3:0] r_len;
-reg  [63:0] r_data;
-reg  [ 1:0] t_retry_cnt;
+reg         t_rtr_req = '0;
+reg         r_rtr_req = '0;
+reg  [ 3:0] r_cnt = '0;
+reg  [ 3:0] r_len = '0;
+reg  [63:0] r_data = '0;
+reg  [ 1:0] t_retry_cnt = '0;
+
 
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 //  TX buffer
 // ---------------------------------------------------------------------------------------------------------------------------------------
-can_tx_fifo #(
-    .AWIDTH          ( 10               ),
-    .DWIDTH          ( 32               )
-) can_tx_buffer (
-    .rstn            ( rstn             ),
-    .clk             ( clk              ),
-    .emptyn          (                  ),
-    .itvalid         ( tx_valid         ),
-    .itready         ( tx_ready         ),
-    .itdata          ( tx_data          ),
-    .otvalid         ( buff_valid       ),
-    .otready         ( buff_ready       ),
-    .otdata          ( buff_data        )
-);
+localparam DSIZE = 32;
+localparam ASIZE = 10;
+
+reg [DSIZE-1:0] buffer [1<<ASIZE];  // may automatically synthesize to BRAM
+
+reg [ASIZE:0] wptr='0, rptr='0;
+
+wire full  = wptr == {~rptr[ASIZE], rptr[ASIZE-1:0]};
+wire empty = wptr == rptr;
+
+assign tx_ready = ~full;
+
+always @ (posedge clk or negedge rstn)
+    if(~rstn) begin
+        wptr <= '0;
+    end else begin
+        if(tx_valid & ~full)
+            wptr <= wptr + (1+ASIZE)'(1);
+    end
+
+always @ (posedge clk)
+    if(tx_valid & ~full)
+        buffer[wptr[ASIZE-1:0]] <= tx_data;
+
+wire            rdready = ~buff_valid | buff_ready;
+reg             rdack = '0;
+reg [DSIZE-1:0] rddata;
+reg [DSIZE-1:0] keepdata = '0;
+assign buff_data = rdack ? rddata : keepdata;
+
+always @ (posedge clk or negedge rstn)
+    if(~rstn) begin
+        buff_valid <= 1'b0;
+        rdack <= 1'b0;
+        rptr <= '0;
+        keepdata <= '0;
+    end else begin
+        buff_valid <= ~empty | ~rdready;
+        rdack <= ~empty & rdready;
+        if(~empty & rdready)
+            rptr <= rptr + (1+ASIZE)'(1);
+        if(rdack)
+            keepdata <= rddata;
+    end
+
+always @ (posedge clk)
+    rddata <= buffer[rptr[ASIZE-1:0]];
+
 
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -106,6 +151,7 @@ can_level_packet #(
     .rx_data         ( pkt_rx_data      ),
     .rx_ack          ( pkt_rx_ack       )
 );
+
 
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -161,6 +207,7 @@ always @ (posedge clk or negedge rstn)
     end
 
 
+
 // ---------------------------------------------------------------------------------------------------------------------------------------
 //  TX action
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -194,5 +241,6 @@ always @ (posedge clk or negedge rstn)
             end
         end
     end
+
 
 endmodule

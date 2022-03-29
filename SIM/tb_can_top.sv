@@ -1,15 +1,30 @@
+
+//--------------------------------------------------------------------------------------------------------
+// Module  : tb_can_top
+// Type    : simulation, top
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Function: testbench for can_top
+//--------------------------------------------------------------------------------------------------------
+
 `timescale 1ps/1ps
 
 module tb_can_top();
+
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// simulation control
+// -----------------------------------------------------------------------------------------------------------------------------
+initial $dumpvars(0, tb_can_top);
+initial #10000000000 $finish;              // simulation for 10ms
+
+
+
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 //  CAN bus
 // ---------------------------------------------------------------------------------------------------------------------------------------
 tri      can_bus;    // can_bus = CAN_H - CAN_L
 pulldown(can_bus);   // pull CAN_H to CAN_L by a resistor
-
-
-
 
 
 
@@ -21,9 +36,9 @@ wire         can1_rstn;
 wire         can1_clk;
 wire         can1_rx;
 wire         can1_tx;
-reg   [31:0] can1_tx_cnt; 
+reg   [31:0] can1_tx_cnt = 0; 
 wire         can1_tx_valid;
-reg   [31:0] can1_tx_data;
+reg   [31:0] can1_tx_data = 0;
 wire         can1_rx_valid;  // whether data byte is valid
 wire         can1_rx_last;   // indicate the last data byte of a packet
 wire  [ 7:0] can1_rx_data;   // a data byte in the packet
@@ -44,21 +59,18 @@ can_top #(
     .default_c_PBS1    ( 16'd5           ),
     .default_c_PBS2    ( 16'd10          )
 ) can1_controller (
-    .rstn            ( can1_rstn        ),
-    .clk             ( can1_clk         ),
-    
-    .can_rx          ( can1_rx          ),
-    .can_tx          ( can1_tx          ),
-    
-    .tx_valid        ( can1_tx_valid    ),  // always try to write tx-fifo
-    .tx_ready        (                  ),
-    .tx_data         ( can1_tx_data     ),
-    
-    .rx_valid        ( can1_rx_valid    ),
-    .rx_last         ( can1_rx_last     ),
-    .rx_data         ( can1_rx_data     ),
-    .rx_id           ( can1_rx_id       ),
-    .rx_ide          ( can1_rx_ide      )
+    .rstn              ( can1_rstn       ),
+    .clk               ( can1_clk        ),
+    .can_rx            ( can1_rx         ),
+    .can_tx            ( can1_tx         ),
+    .tx_valid          ( can1_tx_valid   ),  // always try to write tx-fifo
+    .tx_ready          (                 ),
+    .tx_data           ( can1_tx_data    ),
+    .rx_valid          ( can1_rx_valid   ),
+    .rx_last           ( can1_rx_last    ),
+    .rx_data           ( can1_rx_data    ),
+    .rx_id             ( can1_rx_id      ),
+    .rx_ide            ( can1_rx_ide     )
 );
 
 // CAN1 TX Periodically
@@ -89,8 +101,6 @@ always @ (posedge can1_clk)
 
 
 
-
-
 // ---------------------------------------------------------------------------------------------------------------------------------------
 //  CAN2 device
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -98,9 +108,9 @@ wire         can2_rstn;
 wire         can2_clk;
 wire         can2_rx;
 wire         can2_tx;
-reg   [31:0] can2_tx_cnt; 
+reg   [31:0] can2_tx_cnt = 0; 
 wire         can2_tx_valid;
-reg   [31:0] can2_tx_data;
+reg   [31:0] can2_tx_data = 0;
 wire         can2_rx_valid;  // whether data byte is valid
 wire         can2_rx_last;   // indicate the last data byte of a packet
 wire  [ 7:0] can2_rx_data;   // a data byte in the packet
@@ -121,21 +131,18 @@ can_top #(
     .default_c_PBS1    ( 16'd5           ),
     .default_c_PBS2    ( 16'd10          )
 ) can2_controller (
-    .rstn            ( can2_rstn        ),
-    .clk             ( can2_clk         ),
-    
-    .can_rx          ( can2_rx          ),
-    .can_tx          ( can2_tx          ),
-    
-    .tx_valid        ( can2_tx_valid    ),  // always try to write tx-fifo
-    .tx_ready        (                  ),
-    .tx_data         ( can2_tx_data     ),
-    
-    .rx_valid        ( can2_rx_valid    ),
-    .rx_last         ( can2_rx_last     ),
-    .rx_data         ( can2_rx_data     ),
-    .rx_id           ( can2_rx_id       ),
-    .rx_ide          ( can2_rx_ide      )
+    .rstn              ( can2_rstn       ),
+    .clk               ( can2_clk        ),
+    .can_rx            ( can2_rx         ),
+    .can_tx            ( can2_tx         ),
+    .tx_valid          ( can2_tx_valid   ),  // always try to write tx-fifo
+    .tx_ready          (                 ),
+    .tx_data           ( can2_tx_data    ),
+    .rx_valid          ( can2_rx_valid   ),
+    .rx_last           ( can2_rx_last    ),
+    .rx_data           ( can2_rx_data    ),
+    .rx_id             ( can2_rx_id      ),
+    .rx_ide            ( can2_rx_ide     )
 );
 
 // CAN2 TX Periodically
@@ -166,8 +173,6 @@ always @ (posedge can2_clk)
 
 
 
-
-
 // ---------------------------------------------------------------------------------------------------------------------------------------
 //  CAN3 device
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -175,9 +180,9 @@ wire         can3_rstn;
 wire         can3_clk;
 wire         can3_rx;
 wire         can3_tx;
-reg   [31:0] can3_tx_cnt; 
+reg   [31:0] can3_tx_cnt = 0; 
 wire         can3_tx_valid;
-reg   [31:0] can3_tx_data;
+reg   [31:0] can3_tx_data = 0;
 wire         can3_rx_valid;  // whether data byte is valid
 wire         can3_rx_last;   // indicate the last data byte of a packet
 wire  [ 7:0] can3_rx_data;   // a data byte in the packet
@@ -198,21 +203,18 @@ can_top #(
     .default_c_PBS1    ( 16'd5           ),
     .default_c_PBS2    ( 16'd10          )
 ) can3_controller (
-    .rstn            ( can3_rstn        ),
-    .clk             ( can3_clk         ),
-    
-    .can_rx          ( can3_rx          ),
-    .can_tx          ( can3_tx          ),
-    
-    .tx_valid        ( can3_tx_valid    ),  // always try to write tx-fifo
-    .tx_ready        (                  ),
-    .tx_data         ( can3_tx_data     ),
-    
-    .rx_valid        ( can3_rx_valid    ),
-    .rx_last         ( can3_rx_last     ),
-    .rx_data         ( can3_rx_data     ),
-    .rx_id           ( can3_rx_id       ),
-    .rx_ide          ( can3_rx_ide      )
+    .rstn              ( can3_rstn       ),
+    .clk               ( can3_clk        ),
+    .can_rx            ( can3_rx         ),
+    .can_tx            ( can3_tx         ),
+    .tx_valid          ( can3_tx_valid   ),  // always try to write tx-fifo
+    .tx_ready          (                 ),
+    .tx_data           ( can3_tx_data    ),
+    .rx_valid          ( can3_rx_valid   ),
+    .rx_last           ( can3_rx_last    ),
+    .rx_data           ( can3_rx_data    ),
+    .rx_id             ( can3_rx_id      ),
+    .rx_ide            ( can3_rx_ide     )
 );
 
 // CAN3 TX Periodically
@@ -243,17 +245,16 @@ always @ (posedge can3_clk)
 
 
 
-
 // ---------------------------------------------------------------------------------------------------------------------------------------
-//  CAN3 device
+//  CAN4 device
 // ---------------------------------------------------------------------------------------------------------------------------------------
 wire         can4_rstn;
 wire         can4_clk;
 wire         can4_rx;
 wire         can4_tx;
-reg   [31:0] can4_tx_cnt; 
+reg   [31:0] can4_tx_cnt = 0; 
 wire         can4_tx_valid;
-reg   [31:0] can4_tx_data;
+reg   [31:0] can4_tx_data = 0;
 wire         can4_rx_valid;  // whether data byte is valid
 wire         can4_rx_last;   // indicate the last data byte of a packet
 wire  [ 7:0] can4_rx_data;   // a data byte in the packet
@@ -274,21 +275,18 @@ can_top #(
     .default_c_PBS1    ( 16'd5           ),
     .default_c_PBS2    ( 16'd10          )
 ) can4_controller (
-    .rstn            ( can4_rstn        ),
-    .clk             ( can4_clk         ),
-    
-    .can_rx          ( can4_rx          ),
-    .can_tx          ( can4_tx          ),
-    
-    .tx_valid        ( can4_tx_valid    ),  // always try to write tx-fifo
-    .tx_ready        (                  ),
-    .tx_data         ( can4_tx_data     ),
-    
-    .rx_valid        ( can4_rx_valid    ),
-    .rx_last         ( can4_rx_last     ),
-    .rx_data         ( can4_rx_data     ),
-    .rx_id           ( can4_rx_id       ),
-    .rx_ide          ( can4_rx_ide      )
+    .rstn              ( can4_rstn       ),
+    .clk               ( can4_clk        ),
+    .can_rx            ( can4_rx         ),
+    .can_tx            ( can4_tx         ),
+    .tx_valid          ( can4_tx_valid   ),  // always try to write tx-fifo
+    .tx_ready          (                 ),
+    .tx_data           ( can4_tx_data    ),
+    .rx_valid          ( can4_rx_valid   ),
+    .rx_last           ( can4_rx_last    ),
+    .rx_data           ( can4_rx_data    ),
+    .rx_id             ( can4_rx_id      ),
+    .rx_ide            ( can4_rx_ide     )
 );
 
 // CAN4 TX Periodically
@@ -317,5 +315,45 @@ always @ (posedge can4_clk)
     end
 
 
+endmodule
+
+
+
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------------------------
+//  Module: Generate Clock and reset
+// ---------------------------------------------------------------------------------------------------------------------------------------
+module tb_gen_clkrst #(
+    parameter PERIOD = 10000
+) (
+    output reg  rstn,
+    output reg  clk
+);
+
+initial rstn = 1'b0;
+initial clk  = 1'b1;
+always #(PERIOD) clk = ~clk;
+initial begin repeat(4) @(posedge clk); rstn<=1'b1; end
+
+endmodule
+
+
+
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------------------------
+//  Module: simulate CAN-phy chips, e.g., TJA1050
+// ---------------------------------------------------------------------------------------------------------------------------------------
+module tb_can_phy(
+    input  wire    can_tx,
+    output wire    can_rx,
+    inout          can_bus    // can_bus = CAN_H - CAN_L
+);
+
+assign can_bus = can_tx ? 1'bz : 1'b1;
+assign can_rx = ~can_bus;
 
 endmodule
