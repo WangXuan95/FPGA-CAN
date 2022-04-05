@@ -1,17 +1,17 @@
 
 //--------------------------------------------------------------------------------------------------------
-// Module  : top
+// Module  : fpga_top
 // Type    : synthesizable, FPGA's top, IP's example design
 // Standard: SystemVerilog 2005 (IEEE1800-2005)
 // Function: an example of can_top
 //--------------------------------------------------------------------------------------------------------
 
-module top (
-    // Clocks
+module fpga_top (
+    // clock (50MHz)
     input  wire           pad_clk50m,
-    // UART (TX only)
+    // UART (TX only), 连接到电脑串口
     output wire           pad_uart_tx,
-    // CAN bus
+    // CAN bus, 连接到 CAN PHY
     input  wire           pad_can_rx,
     output wire           pad_can_tx
 );
