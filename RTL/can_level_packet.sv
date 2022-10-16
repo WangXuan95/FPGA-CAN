@@ -84,8 +84,7 @@ always @ (posedge clk or negedge rstn)
 
 
 
-reg        arb = '0;
-wire       arb_next = arb && bit_rx==bit_tx;
+reg        tx_arbitrary = '0;
 
 reg [14:0] rx_crc = '0;
 wire[14:0] rx_crc_next = {rx_crc[13:0], 1'b0} ^ (rx_crc[14] ^ bit_rx ? 15'h4599 : 15'h0);
@@ -132,7 +131,6 @@ always @ (posedge clk or negedge rstn)
         if(rx_valid_latch)
             rx_ack_latch <= rx_ack;
     end
-    
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
@@ -140,7 +138,7 @@ always @ (posedge clk or negedge rstn)
         rx_valid_pre <= 1'b0;
         {rx_id,rx_ide,rx_rtr,rx_len,rx_data,rx_crc} <= '0;
         bit_tx <= 1'b1;
-        arb <= 1'b0;
+        tx_arbitrary <= 1'b0;
         tx_crc <= '0;
         tx_shift <= '1;
         cnt <= 8'd0;
@@ -159,7 +157,7 @@ always @ (posedge clk or negedge rstn)
                 end
                 
                 IDLE : begin
-                    arb <= 1'b0;
+                    tx_arbitrary <= 1'b0;
                     {rx_id,rx_ide,rx_rtr,rx_len,rx_data,rx_crc} <= '0;
                     tx_crc <= '0;
                     tx_shift <= {TX_ID, TX_RTR, 1'b0, 1'b0, 4'd4, tx_data};
@@ -181,20 +179,21 @@ always @ (posedge clk or negedge rstn)
                     end else begin
                         {bit_tx, tx_shift} <= {tx_shift, 1'b1};
                         tx_crc <= tx_crc_next;
-                        arb <= 1'b1;
+                        tx_arbitrary <= 1'b1;
                         stat <= TRX_ID_BASE;
                     end
                 end
                 
                 TRX_ID_BASE : begin
-                    arb <= arb_next;
-                    if(arb_next) begin
+                    if(tx_arbitrary && bit_rx==bit_tx) begin
                         if(tx_ben) begin
                             {bit_tx, tx_shift} <= {tx_shift, 1'b1};
                             tx_crc <= tx_crc_next;
                         end else begin
                             bit_tx <= ~tx_history[0];
                         end
+                    end else begin
+                        tx_arbitrary <= 1'b0;
                     end
                     if(rx_end) begin
                         stat <= IDLE;
@@ -202,14 +201,22 @@ always @ (posedge clk or negedge rstn)
                         stat <= RX_EOF;
                     end else if(rx_ben) begin
                         rx_crc <= rx_crc_next;
+                        cnt <= cnt + 8'd1;
                         if(cnt<8'd11) begin
                             rx_id <= {rx_id[27:0], bit_rx};
-                            cnt <= cnt + 8'd1;
                         end else begin
                             rx_rtr <= bit_rx;
-                            cnt <= 8'd0;
-                            stat <= arb_next ? TX_PAYLOAD : RX_IDE_BIT;
+                            if( !(tx_arbitrary && bit_rx==bit_tx) ) begin              // TX arbitrary failed
+                                cnt <= 8'd0;
+                                stat <= RX_IDE_BIT;
+                            end else if(tx_ben) begin
+                                cnt <= 8'd0;
+                                stat <= TX_PAYLOAD;
+                            end
                         end
+                    end else if(cnt>8'd11) begin
+                        cnt <= 8'd0;
+                        stat <= TX_PAYLOAD;
                     end
                 end
                 
