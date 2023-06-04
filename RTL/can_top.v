@@ -2,7 +2,7 @@
 //--------------------------------------------------------------------------------------------------------
 // Module  : can_top
 // Type    : synthesizable, IP's top
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // Function: CAN bus controller,
 //           CAN-TX: buffer input data and send them to CAN bus,
 //           CAN-RX: get CAN bus data and output to user
@@ -10,21 +10,21 @@
 
 module can_top #(
     // local ID parameter
-    parameter logic [10:0] LOCAL_ID      = 11'h456,
+    parameter [10:0] LOCAL_ID      = 11'h456,
     
     // recieve ID filter parameters
-    parameter logic [10:0] RX_ID_SHORT_FILTER = 11'h123,
-    parameter logic [10:0] RX_ID_SHORT_MASK   = 11'h7ff,
-    parameter logic [28:0] RX_ID_LONG_FILTER  = 29'h12345678,
-    parameter logic [28:0] RX_ID_LONG_MASK    = 29'h1fffffff,
+    parameter [10:0] RX_ID_SHORT_FILTER = 11'h123,
+    parameter [10:0] RX_ID_SHORT_MASK   = 11'h7ff,
+    parameter [28:0] RX_ID_LONG_FILTER  = 29'h12345678,
+    parameter [28:0] RX_ID_LONG_MASK    = 29'h1fffffff,
     
     // CAN timing parameters
-    parameter logic [15:0] default_c_PTS  = 16'd34,
-    parameter logic [15:0] default_c_PBS1 = 16'd5,
-    parameter logic [15:0] default_c_PBS2 = 16'd10
+    parameter [15:0] default_c_PTS  = 16'd34,
+    parameter [15:0] default_c_PBS1 = 16'd5,
+    parameter [15:0] default_c_PBS2 = 16'd10
 ) (
-    input  wire        rstn,  // set to 1 while working
-    input  wire        clk,   // system clock
+    input  wire        rstn,      // set to 1 while working
+    input  wire        clk,       // system clock
     
     // CAN TX and RX, connect to external CAN phy (e.g., TJA1050)
     input  wire        can_rx,
@@ -43,14 +43,16 @@ module can_top #(
     output reg         rx_ide     // whether the ID is LONG or SHORT
 );
 
-initial {rx_valid, rx_last, rx_data, rx_id, rx_ide} = '0;
 
-reg         buff_valid = '0;
-reg         buff_ready = '0;
+
+initial {rx_valid, rx_last, rx_data, rx_id, rx_ide} = 0;
+
+reg         buff_valid = 1'b0;
+reg         buff_ready = 1'b0;
 wire [31:0] buff_data;
 
-reg         pkt_txing = '0;
-reg  [31:0] pkt_tx_data = '0;
+reg         pkt_txing = 1'b0;
+reg  [31:0] pkt_tx_data = 0;
 wire        pkt_tx_done;
 wire        pkt_tx_acked;
 wire        pkt_rx_valid;
@@ -59,14 +61,14 @@ wire        pkt_rx_ide;
 wire        pkt_rx_rtr;
 wire [ 3:0] pkt_rx_len;
 wire [63:0] pkt_rx_data;
-reg         pkt_rx_ack = '0;
+reg         pkt_rx_ack = 1'b0;
 
-reg         t_rtr_req = '0;
-reg         r_rtr_req = '0;
-reg  [ 3:0] r_cnt = '0;
-reg  [ 3:0] r_len = '0;
-reg  [63:0] r_data = '0;
-reg  [ 1:0] t_retry_cnt = '0;
+reg         t_rtr_req = 1'b0;
+reg         r_rtr_req = 1'b0;
+reg  [ 3:0] r_cnt = 4'd0;
+reg  [ 3:0] r_len = 4'd0;
+reg  [63:0] r_data = 64'h0;
+reg  [ 1:0] t_retry_cnt = 2'h0;
 
 
 
@@ -76,9 +78,9 @@ reg  [ 1:0] t_retry_cnt = '0;
 localparam DSIZE = 32;
 localparam ASIZE = 10;
 
-reg [DSIZE-1:0] buffer [1<<ASIZE];  // may automatically synthesize to BRAM
+reg [DSIZE-1:0] buffer [0:((1<<ASIZE)-1)];  // may automatically synthesize to BRAM
 
-reg [ASIZE:0] wptr='0, rptr='0;
+reg [ASIZE:0] wptr=0, rptr=0;
 
 wire full  = wptr == {~rptr[ASIZE], rptr[ASIZE-1:0]};
 wire empty = wptr == rptr;
@@ -87,10 +89,10 @@ assign tx_ready = ~full;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        wptr <= '0;
+        wptr <= 0;
     end else begin
         if(tx_valid & ~full)
-            wptr <= wptr + (1+ASIZE)'(1);
+            wptr <= wptr + {{ASIZE{1'b0}}, 1'b1};
     end
 
 always @ (posedge clk)
@@ -98,22 +100,22 @@ always @ (posedge clk)
         buffer[wptr[ASIZE-1:0]] <= tx_data;
 
 wire            rdready = ~buff_valid | buff_ready;
-reg             rdack = '0;
+reg             rdack = 1'b0;
 reg [DSIZE-1:0] rddata;
-reg [DSIZE-1:0] keepdata = '0;
+reg [DSIZE-1:0] keepdata = 0;
 assign buff_data = rdack ? rddata : keepdata;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
         buff_valid <= 1'b0;
         rdack <= 1'b0;
-        rptr <= '0;
-        keepdata <= '0;
+        rptr <= 0;
+        keepdata <= 0;
     end else begin
         buff_valid <= ~empty | ~rdready;
         rdack <= ~empty & rdready;
         if(~empty & rdready)
-            rptr <= rptr + (1+ASIZE)'(1);
+            rptr <= rptr + {{ASIZE{1'b0}}, 1'b1};
         if(rdack)
             keepdata <= rddata;
     end
@@ -131,7 +133,7 @@ can_level_packet #(
     .default_c_PTS   ( default_c_PTS    ),
     .default_c_PBS1  ( default_c_PBS1   ),
     .default_c_PBS2  ( default_c_PBS2   )
-) can_level_packet_i (
+) u_can_level_packet (
     .rstn            ( rstn             ),
     .clk             ( clk              ),
     
@@ -163,10 +165,10 @@ always @ (posedge clk or negedge rstn)
         r_rtr_req <= 1'b0;
         r_cnt <= 4'd0;
         r_len <= 4'd0;
-        r_data <= '0;
-        {rx_valid, rx_last, rx_data, rx_id, rx_ide} <= '0;
+        r_data <= 0;
+        {rx_valid, rx_last, rx_data, rx_id, rx_ide} <= 0;
     end else begin
-        {rx_valid, rx_last, rx_data} <= '0;
+        {rx_valid, rx_last, rx_data} <= 0;
         
         pkt_rx_ack <= 1'b0;
         r_rtr_req <= 1'b0;
@@ -214,7 +216,7 @@ always @ (posedge clk or negedge rstn)
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
         buff_ready <= 1'b0;
-        pkt_tx_data <= '0;
+        pkt_tx_data <= 0;
         t_rtr_req <= 1'b0;
         pkt_txing <= 1'b0;
         t_retry_cnt <= 2'd0;

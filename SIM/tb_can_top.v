@@ -2,7 +2,7 @@
 //--------------------------------------------------------------------------------------------------------
 // Module  : tb_can_top
 // Type    : simulation, top
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // Function: testbench for can_top
 //--------------------------------------------------------------------------------------------------------
 
@@ -74,7 +74,7 @@ can_top #(
 );
 
 // CAN1 TX Periodically
-assign can1_tx_valid = can1_tx_cnt==80000;
+assign can1_tx_valid = (can1_tx_cnt==80000);
 always @ (posedge can1_clk or negedge can1_rstn)
     if(~can1_rstn) begin
         can1_tx_cnt <= 0;
@@ -146,7 +146,7 @@ can_top #(
 );
 
 // CAN2 TX Periodically
-assign can2_tx_valid = can2_tx_cnt==50000;
+assign can2_tx_valid = (can2_tx_cnt==50000);
 always @ (posedge can2_clk or negedge can2_rstn)
     if(~can2_rstn) begin
         can2_tx_cnt <= 0;
@@ -218,7 +218,7 @@ can_top #(
 );
 
 // CAN3 TX Periodically
-assign can3_tx_valid = can3_tx_cnt==60000;
+assign can3_tx_valid = (can3_tx_cnt==60000);
 always @ (posedge can3_clk or negedge can3_rstn)
     if(~can3_rstn) begin
         can3_tx_cnt <= 0;
@@ -290,7 +290,7 @@ can_top #(
 );
 
 // CAN4 TX Periodically
-assign can4_tx_valid = can4_tx_cnt==50000;
+assign can4_tx_valid = (can4_tx_cnt==50000);
 always @ (posedge can4_clk or negedge can4_rstn)
     if(~can4_rstn) begin
         can4_tx_cnt <= 0;

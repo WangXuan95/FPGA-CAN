@@ -2,20 +2,20 @@
 //--------------------------------------------------------------------------------------------------------
 // Module  : can_level_packet
 // Type    : synthesizable, IP's sub module
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // Function: CAN bus packet level controller,
 //           instantiated by can_top
 //--------------------------------------------------------------------------------------------------------
 
 module can_level_packet #(
-    parameter logic        TX_RTR         = 1'b0,
-    parameter logic [10:0] TX_ID          = 11'h456,
-    parameter logic [15:0] default_c_PTS  = 16'd34,
-    parameter logic [15:0] default_c_PBS1 = 16'd5,
-    parameter logic [15:0] default_c_PBS2 = 16'd10
+    parameter [ 0:0] TX_RTR         = 1'b0,
+    parameter [10:0] TX_ID          = 11'h456,
+    parameter [15:0] default_c_PTS  = 16'd34,
+    parameter [15:0] default_c_PBS1 = 16'd5,
+    parameter [15:0] default_c_PBS2 = 16'd10
 ) (
-    input  wire        rstn,  // set to 1 while working
-    input  wire        clk,   // system clock
+    input  wire        rstn,      // set to 1 while working
+    input  wire        clk,       // system clock
     
     // CAN TX and RX
     input  wire        can_rx,
@@ -37,13 +37,20 @@ module can_level_packet #(
     input  wire        rx_ack
 );
 
+
+
 initial {tx_done, tx_acked} = 1'b0;
-initial {rx_valid,rx_id,rx_ide,rx_rtr,rx_len,rx_data} = '0;
+initial {rx_valid,rx_id,rx_ide,rx_rtr,rx_len,rx_data} = 0;
 
 
-function automatic logic [14:0] crc15(input logic [14:0] crc_val, input logic in_bit);
-    return {crc_val[13:0], 1'b0} ^ (crc_val[14] ^ in_bit ? 15'h4599 : 15'h0);
+function  [14:0] crc15;
+    input [14:0] crc_val;
+    input [ 0:0] in_bit;
+begin
+    crc15 = ( {crc_val[13:0], 1'b0} ^ ((crc_val[14]^in_bit) ? 15'h4599 : 15'h0) );
+end
 endfunction
+
 
 wire bit_req;
 wire bit_rx;
@@ -53,7 +60,7 @@ can_level_bit #(
     .default_c_PTS   ( default_c_PTS    ),
     .default_c_PBS1  ( default_c_PBS1   ),
     .default_c_PBS2  ( default_c_PBS2   )
-) can_level_bit_i (
+) u_can_level_bit (
     .rstn            ( rstn             ),
     .clk             ( clk              ),
     .can_rx          ( can_rx           ),
@@ -64,17 +71,17 @@ can_level_bit #(
 );
 
 
-reg [ 7:0] rx_history = '0;
-reg [ 3:0] tx_history = '1;
-wire       rx_end = rx_history=='1;
-wire       rx_err = rx_history[5:0]=='0;
-wire       rx_ben = rx_history[4:0]!='0 && rx_history[4:0]!='1;
-wire       tx_ben = {tx_history,bit_tx}!='0 && {tx_history,bit_tx}!='1;
+reg [ 7:0] rx_history = 8'd0;
+reg [ 3:0] tx_history = 4'hF;
+wire       rx_end = (rx_history == 8'hFF);
+wire       rx_err = (rx_history[5:0] == 6'd0);
+wire       rx_ben = (rx_history[4:0] != 5'd0) && (rx_history[4:0] != 5'd31);
+wire       tx_ben = ({tx_history,bit_tx} != 5'd0) && ({tx_history,bit_tx} != 5'd31);
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        rx_history <= '0;
-        tx_history <= '1;
+        rx_history <= 8'd0;
+        tx_history <= 4'hF;
     end else begin
         if(bit_req) begin
             rx_history <= {rx_history[6:0], bit_rx};
@@ -84,13 +91,13 @@ always @ (posedge clk or negedge rstn)
 
 
 
-reg        tx_arbitrary = '0;
+reg        tx_arbitrary = 1'b0;
 
-reg [14:0] rx_crc = '0;
+reg [14:0] rx_crc = 15'd0;
 wire[14:0] rx_crc_next = {rx_crc[13:0], 1'b0} ^ (rx_crc[14] ^ bit_rx ? 15'h4599 : 15'h0);
 
-reg [49:0] tx_shift = '1;
-reg [14:0] tx_crc = '0;
+reg [49:0] tx_shift = 50'h3ffff_ffff_ffff;
+reg [14:0] tx_crc = 15'd0;
 wire[14:0] tx_crc_next = {tx_crc[13:0], 1'b0} ^ (tx_crc[14] ^ tx_shift[49] ? 15'h4599 : 15'h0);
 
 wire[ 3:0] rx_len_next = {rx_len[2:0], bit_rx};
@@ -113,12 +120,12 @@ localparam [3:0] INIT         = 4'd0,
                  RX_ACK       = 4'd14,
                  RX_EOF       = 4'd15;
 
-reg [ 7:0] cnt = '0;
+reg [ 7:0] cnt = 8'd0;
 reg [ 3:0] stat = INIT;
 
-reg rx_valid_pre = '0;
-reg rx_valid_latch = '0;
-reg rx_ack_latch = '0;
+reg rx_valid_pre = 1'b0;
+reg rx_valid_latch = 1'b0;
+reg rx_ack_latch = 1'b0;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
@@ -128,7 +135,7 @@ always @ (posedge clk or negedge rstn)
     end else begin
         rx_valid <= rx_valid_pre & (rx_crc==15'd0);
         rx_valid_latch <= rx_valid;
-        if(rx_valid_latch)
+        if (rx_valid_latch)
             rx_ack_latch <= rx_ack;
     end
 
@@ -136,11 +143,11 @@ always @ (posedge clk or negedge rstn)
     if(~rstn) begin
         {tx_done, tx_acked} <= 1'b0;
         rx_valid_pre <= 1'b0;
-        {rx_id,rx_ide,rx_rtr,rx_len,rx_data,rx_crc} <= '0;
+        {rx_id,rx_ide,rx_rtr,rx_len,rx_data,rx_crc} <= 0;
         bit_tx <= 1'b1;
         tx_arbitrary <= 1'b0;
-        tx_crc <= '0;
-        tx_shift <= '1;
+        tx_crc <= 15'd0;
+        tx_shift <= 50'h3ffff_ffff_ffff;
         cnt <= 8'd0;
         stat <= INIT;
     end else begin
@@ -151,15 +158,14 @@ always @ (posedge clk or negedge rstn)
             bit_tx <= 1'b1;
             
             case(stat)
-                INIT : begin
+                INIT :
                     if(rx_end)
                         stat <= IDLE;
-                end
                 
                 IDLE : begin
                     tx_arbitrary <= 1'b0;
-                    {rx_id,rx_ide,rx_rtr,rx_len,rx_data,rx_crc} <= '0;
-                    tx_crc <= '0;
+                    {rx_id,rx_ide,rx_rtr,rx_len,rx_data,rx_crc} <= 0;
+                    tx_crc <= 15'd0;
                     tx_shift <= {TX_ID, TX_RTR, 1'b0, 1'b0, 4'd4, tx_data};
                     if(bit_rx == 1'b0) begin
                         cnt <= 8'd0;
@@ -173,7 +179,7 @@ always @ (posedge clk or negedge rstn)
                     end
                 end
                 
-                TX_ID_MSB : begin
+                TX_ID_MSB :
                     if(bit_rx) begin
                         stat <= TX_EOF;
                     end else begin
@@ -182,7 +188,6 @@ always @ (posedge clk or negedge rstn)
                         tx_arbitrary <= 1'b1;
                         stat <= TRX_ID_BASE;
                     end
-                end
                 
                 TRX_ID_BASE : begin
                     if(tx_arbitrary && bit_rx==bit_tx) begin
@@ -220,7 +225,7 @@ always @ (posedge clk or negedge rstn)
                     end
                 end
                 
-                TX_PAYLOAD : begin
+                TX_PAYLOAD :
                     if(bit_rx != bit_tx) begin
                         stat <= TX_EOF;
                     end else if(tx_ben) begin
@@ -236,11 +241,9 @@ always @ (posedge clk or negedge rstn)
                     end else begin
                         bit_tx <= ~tx_history[0];
                     end
-                end
                 
-                TX_ACK_DEL : begin
+                TX_ACK_DEL :
                     stat <= bit_rx ? TX_ACK : TX_EOF;
-                end
                 
                 TX_ACK : begin
                     tx_done <= 1'b1;
@@ -248,16 +251,15 @@ always @ (posedge clk or negedge rstn)
                     stat <= TX_EOF;
                 end
                 
-                TX_EOF : begin
+                TX_EOF :
                     if(cnt<8'd8) begin
                         cnt <= cnt + 8'd1;
                     end else begin
                         cnt <= 8'd0;
                         stat <= RX_EOF;
                     end
-                end
                 
-                RX_IDE_BIT : begin
+                RX_IDE_BIT :
                     if(rx_end) begin
                         stat <= IDLE;
                     end else if(rx_err) begin
@@ -267,9 +269,8 @@ always @ (posedge clk or negedge rstn)
                         rx_ide <= bit_rx;
                         stat <= bit_rx ? RX_ID_EXTEND : RX_CTRL;
                     end
-                end
                 
-                RX_ID_EXTEND : begin
+                RX_ID_EXTEND :
                     if(rx_end) begin
                         stat <= IDLE;
                     end else if(rx_err) begin
@@ -285,9 +286,8 @@ always @ (posedge clk or negedge rstn)
                             stat <= RX_RESV1_BIT;
                         end
                     end
-                end
                 
-                RX_RESV1_BIT : begin
+                RX_RESV1_BIT :
                     if(rx_end) begin
                         stat <= IDLE;
                     end else if(rx_err) begin
@@ -296,9 +296,8 @@ always @ (posedge clk or negedge rstn)
                         rx_crc <= rx_crc_next;
                         stat <= bit_rx ? RX_EOF : RX_CTRL;
                     end
-                end
                 
-                RX_CTRL : begin
+                RX_CTRL :
                     if(rx_end) begin
                         stat <= IDLE;
                     end else if(rx_err) begin
@@ -310,12 +309,11 @@ always @ (posedge clk or negedge rstn)
                             cnt <= cnt + 8'd1;
                         end else begin
                             cnt <= 8'd0;
-                            stat <= (rx_len_next!='0 && rx_rtr==1'b0) ? RX_DATA : RX_CRC;
+                            stat <= (rx_len_next!=4'd0 && rx_rtr==1'b0) ? RX_DATA : RX_CRC;
                         end
                     end
-                end
                 
-                RX_DATA : begin
+                RX_DATA :
                     if(rx_end) begin
                         stat <= IDLE;
                     end else if(rx_err) begin
@@ -330,9 +328,8 @@ always @ (posedge clk or negedge rstn)
                             stat <= RX_CRC;
                         end
                     end
-                end
                 
-                RX_CRC : begin
+                RX_CRC :
                     if(rx_end) begin
                         stat <= IDLE;
                     end else if(rx_err) begin
@@ -347,9 +344,8 @@ always @ (posedge clk or negedge rstn)
                             rx_valid_pre <= 1'b1;
                         end
                     end
-                end
                 
-                RX_ACK : begin
+                RX_ACK :
                     if(rx_end) begin
                         stat <= IDLE;
                     end else if(rx_err) begin
@@ -359,12 +355,10 @@ always @ (posedge clk or negedge rstn)
                             bit_tx <= 1'b0;                         // send ACK
                         stat <= RX_EOF;
                     end
-                end
                 
-                RX_EOF : begin
+                default : // RX_EOF :
                     if(rx_end)
                         stat <= IDLE;
-                end
 
             endcase
         end
